@@ -1,0 +1,192 @@
+## Skript par Cyril59310
+
+#Addon utilisé: Skbee (https://github.com/SkriptHub/SkBee)
+
+## Initialise la variable PVP à la connexion du joueur
+on join:
+    # Si la variable PVP n'est pas définie pour le joueur, on la définit sur "true"
+    if {pvp.%player%.status} is not set:
+        set {pvp.%player%.status} to "true"
+
+options:
+    prefix: &b[&9PVP&b]
+    #Traduction
+    #autres
+    msg_pvp_enabled: &7Vous avez le PVP &eactivé.
+    msg_pvp_disabled: &7Vous n'avez pas le PVP &eactivé.
+    msg_player_pvp_disabled:&7Ce joueur a le PVP &edésactivé.
+    msg_pvp_help: &cTapez &f/pvp help &c pour plus d'informations sur la commande.
+    msg_missing_arg: &cErreur : argument manquant (&f/pvp true/false/whitelist/help&c).
+    msg_pvp_set: &7PVP déjà défini sur &e%arg 1%.
+    msg_pvp_updated: &7PVP défini sur &e%arg 1%.
+    msg_add_error: &cErreur : Vous devez spécifier un joueur.
+    msg_never_connected: &7Ce joueur ne s'est jamais connecté au serveur.
+    msg_self_error: &cErreur : Vous ne pouvez pas indiquer votre pseudo !
+    msg_not_in_whitelist: &7Ne vous a pas ajouté à sa whitelist.
+    msg_add_to_whitelist: &7Vous devez aussi ajouter &f%victim% &7à votre whitelist.
+    #help commande
+    msg_help_usage: &7Utilisation de &6/pvp
+    msg_help_status: &6/pvp &fAffiche le statut de votre PVP.
+    msg_help_true: &6/pvp true &fPermet à tous les joueurs de vous PVP.
+    msg_help_false: &6/pvp false &fAucun joueur ne pourra vous PVP.
+    msg_help_list: &6/pvp list &fListe les joueurs autorisés à contourner la restriction.
+    msg_help_add: &6/pvp add <player> &fAutorise un joueur à vous attaquer même si votre option PVP est désactivée.
+    msg_help_remove: &6/pvp remove <player>/all &fRetire l'autorisation à un joueur de vous PVP.
+    #list commande
+    msg_whitelist_list: &2Joueurs autorisés à vous PVP
+    msg_no_whitelist: &7Votre liste ne contient aucun joueur.
+    #add commande
+    msg_already_in_whitelist: &7Ce joueur est déjà dans votre whitelist.
+    msg_added_whitelist: &f%arg 2% &7ajouté à la whitelist.
+    msg_added_notice: &f%player% &7vous a ajouté à sa whitelist.
+    msg_pvp_waiting_add: &7Il pourra vous PVP une fois qu'il vous aura aussi ajouté.
+    msg_pvp_add_notice: &7Ajoutez-le avec '&f/pvp add %player%' &7pour pouvoir le PVP.
+    #remove commande
+    msg_remove_all: &7Tous les joueurs de votre whitelist ont été retirés.
+    msg_no_players_in_list: &7Vous n'avez aucun joueur dans votre liste.
+    msg_removed_whitelist: &f%arg 2% &7retiré de la whitelist, il ne pourra plus vous PVP.
+    msg_removed_notice: &f%player% &7vous a retiré de sa whitelist.
+    msg_remove_suggestion: &7Vous pouvez aussi le retirer avec &f'/pvp remove %player%'.
+    msg_not_in_whitelist: &7Ce joueur ne fait pas partie de votre whitelist.
+
+## Complétion automatique des commandes pour "/pvp"
+on tab complete of "/pvp":
+    # Définit les options possibles pour l'argument de la commande
+    set tab completions for position 1 to "help", "true", "false", "add", "remove" and "list"
+
+## Gestion des dégâts entre joueurs
+on damage of a player:
+    # Si la cause du dégât est une chute ou un projectile (comme une perle de l'ender)
+    if damage cause is fall or projectile:
+        if projectile is an ender pearl:
+            stop  # Arrête l'événement de dégât pour une perle de l'ender
+
+    # Vérifie si l'attaquant et la victime sont dans la whitelist de l'autre
+    if {pvp.%victim%.whitelist::*} contains attacker:
+        if {pvp.%attacker%.whitelist::*} doesn't contain victim:
+            # Si l'attaquant n'est pas dans la whitelist de la victime, annule l'événement et envoie un message
+            cancel event
+            send action bar "{@prefix} {@msg_add_to_whitelist}" to attacker
+            stop
+        else:
+            stop  # Si tout est ok, on ne fait rien
+
+    # Si l'attaquant a le PVP désactivé
+    if {pvp.%attacker%.status} is "false":
+        if {pvp.%attacker%.whitelist::*} contains victim:
+            if {pvp.%victim%.whitelist::*} doesn't contain attacker:
+                cancel event
+                send action bar "{@prefix} {@msg_not_in_whitelist}" to attacker
+                stop
+        cancel event
+        send action bar "{@prefix} {@msg_pvp_disabled}" to attacker
+
+    # Si la victime a le PVP désactivé
+    if {pvp.%victim%.status} is "false":
+        if {pvp.%attacker%.whitelist::*} contains victim:
+            if {pvp.%victim%.whitelist::*} doesn't contain attacker:
+                cancel event
+                send action bar "{@prefix} &f%victim% {@msg_not_in_whitelist}" to attacker
+                stop
+        cancel event
+        send action bar "{@prefix} {@msg_player_pvp_disabled}" to attacker
+
+## Commande principale /pvp
+command pvp [<text>] [<offline player>]:
+    trigger:
+        # Vérification si aucun argument n'est fourni, et affiche le statut actuel du PVP du joueur
+        if arg 1 is not set:
+            if {pvp.%player%.status} is "true":
+                send "{@prefix} {@msg_pvp_enabled}"
+            else:
+                send "{@prefix} {@msg_pvp_disabled}"
+            send ""
+            send "{@msg_pvp_help}"
+            stop
+            
+        # Vérification de la validité des arguments
+        if arg 1 is not "true" or "false" or "add" or "remove" or "list" or "help":
+            send "{@prefix} {@msg_missing_arg}"
+            stop
+
+        # Commande Help : Affiche les instructions pour utiliser la commande
+        if arg 1 is "help":
+            send "{@msg_help_usage}"
+            send "{@msg_help_status}"
+            send "{@msg_help_true}"
+            send "{@msg_help_false}"
+            send "{@msg_help_list}"
+            send "{@msg_help_add}"
+            send "{@msg_help_remove}"
+            stop
+
+        # Commande true/false : Modifie le statut du PVP (activé ou désactivé)
+        if arg 1 is "true" or "false":
+            if {pvp.%player%.status} is arg 1:
+                send "{@prefix} {@msg_pvp_set}"
+            else:
+                set {pvp.%player%.status} to arg 1
+                send "{@prefix} {@msg_pvp_updated}"
+            stop
+
+        # Commande list : Affiche les joueurs dans la whitelist
+        if arg 1 is "list":
+            if size of {pvp.%player%.whitelist::*} is greater than 0:
+                send "{@prefix} {@msg_whitelist_list}:"
+                loop {pvp.%player%.whitelist::*}:        
+                    send "%loop-value%"  # Liste chaque joueur dans la whitelist
+            else:
+                send "{@prefix} {@msg_no_whitelist}"
+                stop
+
+        # Commande add : Ajoute un joueur à la whitelist pour qu'il puisse PVP avec le joueur
+        if arg 1 is "add":
+            if arg 2 is not set:
+                send "{@prefix} {@msg_add_error}"
+                stop
+            if {pvp.%arg 2%.status} is not set:
+                send "{@prefix} {@msg_never_connected}"
+                stop
+            if arg 2 is player:
+                send "{@prefix} {@msg_self_error}"
+                stop
+            if {pvp.%player%.whitelist::*} contains arg 2:
+                send "{@prefix} {@msg_already_in_whitelist}"
+                stop
+            add arg 2 to {pvp.%player%.whitelist::*}
+            send "{@prefix} {@msg_added_whitelist}"         
+            send "{@prefix} {@msg_added_notice}" to arg 2 
+            if {pvp.%arg 2%.whitelist::*} doesn't contain player:
+                send "{@prefix} {@msg_pvp_waiting_add}"
+                send "{@prefix} {@msg_pvp_add_notice}" to arg 2
+                stop
+            stop
+
+        # Commande remove : Retire un joueur de la whitelist
+        if arg 1 is "remove":
+            if arg 2 is not set:
+                send "{@prefix} {@msg_add_error}"
+                stop
+            if arg 2 is "all":
+                if size of {pvp.%player%.whitelist::*} is greater than 0:
+                    loop {pvp.%player%.whitelist::*}:        
+                        remove loop-value from {pvp.%player%.whitelist::*}
+                    send "{@prefix} {@msg_remove_all}"
+                else:
+                    send "{@prefix} {@msg_no_players_in_list}"
+                stop
+            if {pvp.%arg 2%.status} is not set:
+                send "{@prefix} {@msg_never_connected}"
+                stop
+            if arg 2 is player:
+                send "{@prefix} {@msg_self_error}"
+                stop
+            if {pvp.%player%.whitelist::*} doesn't contain arg 2:
+                send "{@prefix} {@msg_not_in_whitelist}"
+                stop
+            remove arg 2 from {pvp.%player%.whitelist::*}
+            send "{@prefix} {@msg_removed_whitelist}"
+            send "{@prefix} {@msg_removed_notice}" to arg 2
+            if {pvp.%arg 2%.whitelist::*} contains player:
+                send "{@prefix} {@msg_remove_suggestion}" to arg 2
+            stop
