@@ -1,6 +1,6 @@
 ## Skript par Cyril59310
 #Github: https://github.com/cyril59310/Skript/blob/main/PVP_toggle.sk
-#Version 1.0.1
+#Version 1.0.2
 
 #Addon utilisé: Skbee (https://github.com/SkriptHub/SkBee)
 
@@ -63,7 +63,7 @@ on damage of a player:
     if damage cause is fall or projectile:
         if projectile is an ender pearl:
             stop  # Arrête l'événement de dégât pour une perle de l'ender
-
+        stop
     # Vérifie si l'attaquant et la victime sont dans la whitelist de l'autre
     if {pvp.%victim%.whitelist::*} contains attacker:
         if {pvp.%attacker%.whitelist::*} doesn't contain victim:
@@ -75,24 +75,25 @@ on damage of a player:
             stop  # Si tout est ok, on ne fait rien
 
     # Si l'attaquant a le PVP désactivé
-    if {pvp.%attacker%.status} is "false":
-        if {pvp.%attacker%.whitelist::*} contains victim:
-            if {pvp.%victim%.whitelist::*} doesn't contain attacker:
-                cancel event
-                send action bar "{@prefix} {@msg_not_in_whitelist}" to attacker
-                stop
-        cancel event
-        send action bar "{@prefix} {@msg_pvp_disabled}" to attacker
+    if attacker is a player:
+        if {pvp.%attacker%.status} is "false":
+            if {pvp.%attacker%.whitelist::*} contains victim:
+                if {pvp.%victim%.whitelist::*} doesn't contain attacker:
+                    cancel event
+                    send action bar "{@prefix} {@msg_not_in_whitelist}" to attacker
+                    stop
+            cancel event
+            send action bar "{@prefix} {@msg_pvp_disabled}" to attacker
 
     # Si la victime a le PVP désactivé
-    if {pvp.%victim%.status} is "false":
-        if {pvp.%attacker%.whitelist::*} contains victim:
-            if {pvp.%victim%.whitelist::*} doesn't contain attacker:
-                cancel event
-                send action bar "{@prefix} &f%victim% {@msg_not_in_whitelist}" to attacker
-                stop
-        cancel event
-        send action bar "{@prefix} {@msg_player_pvp_disabled}" to attacker
+        if {pvp.%victim%.status} is "false":
+            if {pvp.%attacker%.whitelist::*} contains victim:
+                if {pvp.%victim%.whitelist::*} doesn't contain attacker:
+                    cancel event
+                    send action bar "{@prefix} &f%victim% {@msg_not_in_whitelist}" to attacker
+                    stop
+            cancel event
+            send action bar "{@prefix} {@msg_player_pvp_disabled}" to attacker
 
 ## Commande principale /pvp
 command pvp [<text>] [<offline player>]:
