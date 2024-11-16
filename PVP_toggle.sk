@@ -1,6 +1,6 @@
 ## Skript par Cyril59310
 #Github: https://github.com/cyril59310/Skript/blob/main/PVP_toggle.sk
-#Version 1.0.0
+#Version 1.0.1
 
 #Addon utilisé: Skbee (https://github.com/SkriptHub/SkBee)
 
@@ -26,6 +26,7 @@ options:
     msg_self_error: &cErreur : Vous ne pouvez pas indiquer votre pseudo !
     msg_not_in_whitelist: &7Ne vous a pas ajouté à sa whitelist.
     msg_add_to_whitelist: &7Vous devez aussi ajouter &f%victim% &7à votre whitelist.
+    msg_console_executor: &cVous ne pouvez pas exécuter cette commande dans la console.
     #help commande
     msg_help_usage: &7Utilisation de &6/pvp
     msg_help_status: &6/pvp &fAffiche le statut de votre PVP.
@@ -96,6 +97,9 @@ on damage of a player:
 ## Commande principale /pvp
 command pvp [<text>] [<offline player>]:
     trigger:
+        if executor is console: #Empêche d'exécuter les commandes dans la console.
+            send "{@prefix} {@msg_console_executor}"
+            stop
         # Vérification si aucun argument n'est fourni, et affiche le statut actuel du PVP du joueur
         if arg 1 is not set:
             if {pvp.%player%.status} is "true":
