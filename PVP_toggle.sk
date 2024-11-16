@@ -63,7 +63,7 @@ on damage of a player:
     if damage cause is fall or projectile:
         if projectile is an ender pearl:
             stop  # Arrête l'événement de dégât pour une perle de l'ender
-        stop
+            
     # Vérifie si l'attaquant et la victime sont dans la whitelist de l'autre
     if {pvp.%victim%.whitelist::*} contains attacker:
         if {pvp.%attacker%.whitelist::*} doesn't contain victim:
