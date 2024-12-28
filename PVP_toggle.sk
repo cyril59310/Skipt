@@ -1,6 +1,6 @@
 ## Skript par Cyril59310
 #Github: https://github.com/cyril59310/Skript/blob/main/PVP_toggle.sk
-#Version 1.0.3
+#Version 1.0.4
 
 #Addon utilisé: Skbee (https://github.com/SkriptHub/SkBee)
 
@@ -24,7 +24,7 @@ options:
     msg_add_error: &cErreur : Vous devez spécifier un joueur.
     msg_never_connected: &7Ce joueur ne s'est jamais connecté au serveur.
     msg_self_error: &cErreur : Vous ne pouvez pas indiquer votre pseudo !
-    msg_not_in_whitelist: &7Ne vous a pas ajouté à sa whitelist.
+    msg_not_add_in_whitelist: &7Ne vous a pas ajouté à sa whitelist.
     msg_add_to_whitelist: &7Vous devez aussi ajouter &f%victim% &7à votre whitelist.
     msg_console_executor: &cVous ne pouvez pas exécuter cette commande dans la console.
     #help commande
@@ -73,6 +73,8 @@ on damage of a player:
             cancel event
             send action bar "{@prefix} {@msg_add_to_whitelist}" to attacker
             stop
+        else:
+            stop
 
     # Si l'attaquant a le PVP désactivé
     if attacker is a player:
@@ -80,7 +82,7 @@ on damage of a player:
             if {pvp.%attacker%.whitelist::*} contains victim:
                 if {pvp.%victim%.whitelist::*} doesn't contain attacker:
                     cancel event
-                    send action bar "{@prefix} {@msg_not_in_whitelist}" to attacker
+                    send action bar "{@prefix} {@msg_not_add_in_whitelist}" to attacker
                     stop
             cancel event
             send action bar "{@prefix} {@msg_pvp_disabled}" to attacker
@@ -90,7 +92,7 @@ on damage of a player:
             if {pvp.%attacker%.whitelist::*} contains victim:
                 if {pvp.%victim%.whitelist::*} doesn't contain attacker:
                     cancel event
-                    send action bar "{@prefix} &f%victim% {@msg_not_in_whitelist}" to attacker
+                    send action bar "{@prefix} &f%victim% {@msg_not_add_in_whitelist}" to attacker
                     stop
             cancel event
             send action bar "{@prefix} {@msg_player_pvp_disabled}" to attacker
@@ -196,7 +198,7 @@ command pvp [<text>] [<offline player>]:
             remove arg 2 from {pvp.%player%.whitelist::*}
             send "{@prefix} {@msg_removed_whitelist}"
             send "{@prefix} {@msg_removed_notice}" to arg 2
-            if arg 2 contain player:
+            if {pvp.%arg 2%.whitelist::*} contain player:
                 send "{@prefix} {@msg_disallow_notice}" to arg 2 and player
             if {pvp.%arg 2%.whitelist::*} contains player:
                 send "{@prefix} {@msg_remove_suggestion}" to arg 2
